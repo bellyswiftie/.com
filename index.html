@@ -20,7 +20,6 @@
         body { 
             font-family: 'Kanit', sans-serif; 
             -webkit-tap-highlight-color: transparent;
-            /* เพิ่ม linear-gradient สีขาวโปร่งแสง ทับภาพพื้นหลังให้ดูสว่างและอ่านง่ายขึ้น */
             background-image: linear-gradient(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.65)), url('https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExdnQ4MzNoaGx4MHh6Y2diYmJtN2N2ejB6aHNmOGhzdHhxdmd3ODJscyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/s1iF2QudmlgXIWMQf4/giphy.gif');
             background-size: cover;
             background-position: center;
@@ -233,10 +232,16 @@
                     <i class="fa-solid fa-file-export text-4xl text-sky-400"></i>
                 </div>
                 <h2 class="text-lg font-black text-sky-600 mb-6">ส่งออกรายงาน</h2>
-                <div class="mb-8 text-left bg-white/60 p-4 rounded-xl border border-sky-100">
-                    <p class="text-xs font-bold text-gray-600 mb-1"><i class="fa-solid fa-circle-info text-sky-400 mr-1"></i>คำแนะนำ</p>
-                    <p class="text-xs text-gray-500 leading-relaxed">ระบบจะทำการจับภาพหน้าจอของ "หน้าภาพรวมทั้งหมด" พร้อมกราฟยอดขาย เพื่อบันทึกเป็นไฟล์ให้คุณเก็บไว้เป็นหลักฐาน</p>
+                
+                <div class="mb-6 text-left bg-white/60 p-4 rounded-xl border border-sky-100">
+                    <p class="text-[11px] font-bold text-gray-600 mb-2"><i class="fa-solid fa-calendar-days text-sky-400 mr-1"></i>เลือกวันที่ (เว้นว่างเพื่อดูทั้งหมด)</p>
+                    <div class="flex items-center gap-2 mb-2">
+                        <input type="date" id="export-start" class="laser-input w-1/2 p-2 text-xs text-gray-600">
+                        <span class="text-sky-400 font-bold">-</span>
+                        <input type="date" id="export-end" class="laser-input w-1/2 p-2 text-xs text-gray-600">
+                    </div>
                 </div>
+
                 <div class="grid grid-cols-2 gap-4">
                     <button onclick="exportDoc('pdf')" class="bg-gray-800 text-white p-3.5 rounded-2xl font-bold shadow-lg hover:bg-gray-900 transition"><i class="fa-solid fa-file-pdf mr-2"></i>ส่งเป็น PDF</button>
                     <button onclick="exportDoc('img')" class="bg-sky-500 text-white p-3.5 rounded-2xl font-bold shadow-lg shadow-sky-200 hover:bg-sky-600 transition"><i class="fa-solid fa-image mr-2"></i>ส่งเป็นรูปภาพ</button>
@@ -280,18 +285,15 @@
     </script>
 
     <script>
-        // ==========================================
-        // 1. ตั้งค่า API URL
-        // ==========================================
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbxZygRfzwgLDUvlVWsqrlTgWBsp8ceaCKpabTkRSMeITZ32iODR0ls2-GKIlZtVDKmY/exec'; 
         
-        // ==========================================
-        // 2. ระบบ PIN 4 หลัก
-        // ==========================================
         let savedPin = localStorage.getItem('appPin');
         let currentPin = "";
         const pinScreen = document.getElementById('pin-screen');
         const pinTitle = document.getElementById('pin-title');
+        
+        // ตัวแปรสำหรับเก็บข้อมูลต้นฉบับไว้ใช้ตอนฟิลเตอร์เวลา Export
+        let originalDashboardData = null; 
 
         if(savedPin) { pinTitle.innerHTML = "<i class='fa-solid fa-lock mr-2'></i>ใส่รหัส PIN เพื่อเข้าใช้งาน"; }
 
@@ -332,9 +334,6 @@
             loadAllRecords();
         }
 
-        // ==========================================
-        // 3. ระบบนำทาง Tabs
-        // ==========================================
         function switchTab(tabId) {
             document.querySelectorAll('.page-section').forEach(el => el.classList.add('hidden'));
             document.getElementById(`page-${tabId}`).classList.remove('hidden');
@@ -362,9 +361,6 @@
             });
         }
 
-        // ==========================================
-        // 4. บันทึกข้อมูล (POST)
-        // ==========================================
         async function submitForm(event, type) {
             event.preventDefault();
             showLoading(true);
@@ -399,9 +395,6 @@
             showLoading(false);
         }
 
-        // ==========================================
-        // 5. โหลดข้อมูลภาพรวม แดชบอร์ด
-        // ==========================================
         let chartInstance = null;
         async function loadDashboard() {
             showLoading(true);
@@ -414,6 +407,7 @@
                 const res = await response.json();
                 if(res.status === 'success') {
                     const data = res.data;
+                    originalDashboardData = data; // เก็บตัวแปรต้นฉบับไว้
                     document.getElementById('txt-total-income').innerText = data.totalIncome.toLocaleString() + ' ฿';
                     document.getElementById('txt-total-expense').innerText = data.totalExpense.toLocaleString() + ' ฿';
                     renderChart(data.dailyChart);
@@ -424,7 +418,19 @@
 
         function renderChart(dailyData) {
             const ctx = document.getElementById('salesChart').getContext('2d');
-            const labels = Object.keys(dailyData).sort();
+            
+            // แก้ไข: ให้เรียงลำดับวันที่แบบปฏิทินจริงแทนการเรียงตามตัวอักษร
+            const labels = Object.keys(dailyData).sort((a, b) => {
+                const partsA = a.split('/');
+                const partsB = b.split('/');
+                if(partsA.length === 3 && partsB.length === 3) {
+                    const dateA = new Date(partsA[2], partsA[1] - 1, partsA[0]);
+                    const dateB = new Date(partsB[2], partsB[1] - 1, partsB[0]);
+                    return dateA - dateB;
+                }
+                return a.localeCompare(b);
+            });
+
             const incomeData = labels.map(date => dailyData[date].income);
             const expenseData = labels.map(date => dailyData[date].expense);
 
@@ -432,7 +438,7 @@
             chartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: labels, // วันที่จะแสดงเป็น วว/ดด/ปปปป สั้นๆ แล้ว
+                    labels: labels,
                     datasets: [
                         { label: 'รายรับ', data: incomeData, backgroundColor: '#4ade80', borderRadius: 6 },
                         { label: 'รายจ่าย', data: expenseData, backgroundColor: '#f87171', borderRadius: 6 }
@@ -449,11 +455,7 @@
             });
         }
 
-        // ==========================================
-        // 6. ฟังก์ชัน: โหลดรายการทั้งหมด, แก้ไข, ลบข้อมูล
-        // ==========================================
         let allRecordsCache = [];
-
         async function loadAllRecords() {
             const listContainer = document.getElementById('records-list');
             listContainer.innerHTML = '<p class="text-center text-sm text-sky-600 font-bold py-8 bg-white/50 rounded-2xl"><i class="fa-solid fa-spinner fa-spin mr-2 text-sky-400"></i>กำลังโหลดรายการ...</p>';
@@ -537,7 +539,7 @@
                 });
                 const res = await response.json();
                 if(res.status === 'success') {
-                    alert('✨ แก้ไขข้อมูลสำเร็จ');
+                    alert('แก้ไขข้อมูลสำเร็จ');
                     closeEditModal();
                     loadAllRecords();
                     loadDashboard();
@@ -557,7 +559,7 @@
                 });
                 const res = await response.json();
                 if(res.status === 'success') {
-                    alert('🗑 ลบรายการเรียบร้อยแล้ว');
+                    alert('ลบรายการเรียบร้อยแล้ว');
                     loadAllRecords();
                     loadDashboard();
                 }
@@ -566,9 +568,40 @@
         }
 
         // ==========================================
-        // 7. ระบบส่งออกไฟล์เอกสาร
+        // 7. ระบบส่งออกไฟล์เอกสาร (ปรับปรุงเรื่องการกรองวันที่)
         // ==========================================
         function exportDoc(format) {
+            const startVal = document.getElementById('export-start').value;
+            const endVal = document.getElementById('export-end').value;
+            
+            // กรองข้อมูลเฉพาะวันที่ ที่เลือก (ถ้ามีการเลือก)
+            if(originalDashboardData && (startVal || endVal)) {
+                let filteredDaily = {};
+                let fInc = 0;
+                let fExp = 0;
+                
+                // กำหนดขอบเขตเวลา ถ้าไม่ได้กรอกช่องใดช่องหนึ่ง ให้เป็นอดีตหรืออนาคตไปเลย
+                const sDate = startVal ? new Date(startVal + 'T00:00:00') : new Date('2000-01-01T00:00:00');
+                const eDate = endVal ? new Date(endVal + 'T23:59:59') : new Date('2100-01-01T23:59:59');
+
+                for (let d in originalDashboardData.dailyChart) {
+                    const parts = d.split('/');
+                    if(parts.length === 3) {
+                        const currD = new Date(parts[2], parts[1] - 1, parts[0]);
+                        if(currD >= sDate && currD <= eDate) {
+                            filteredDaily[d] = originalDashboardData.dailyChart[d];
+                            fInc += filteredDaily[d].income;
+                            fExp += filteredDaily[d].expense;
+                        }
+                    }
+                }
+                
+                // อัปเดตตัวเลขหน้า Overview ชั่วคราวก่อนจับภาพ
+                document.getElementById('txt-total-income').innerText = fInc.toLocaleString() + ' ฿';
+                document.getElementById('txt-total-expense').innerText = fExp.toLocaleString() + ' ฿';
+                renderChart(filteredDaily);
+            }
+
             const element = document.getElementById('page-overview');
             const opt = {
                 margin:       0.5,
@@ -582,18 +615,28 @@
             switchTab('overview');
             
             setTimeout(() => {
+                const restoreView = () => {
+                    showLoading(false);
+                    // เมื่อจับภาพเสร็จ คืนค่า Dashboard เป็นแบบโชว์ทุกวันเหมือนเดิม
+                    if(originalDashboardData && (startVal || endVal)) {
+                        document.getElementById('txt-total-income').innerText = originalDashboardData.totalIncome.toLocaleString() + ' ฿';
+                        document.getElementById('txt-total-expense').innerText = originalDashboardData.totalExpense.toLocaleString() + ' ฿';
+                        renderChart(originalDashboardData.dailyChart);
+                    }
+                };
+
                 if(format === 'pdf') {
-                    html2pdf().set(opt).from(element).save().then(() => showLoading(false));
+                    html2pdf().set(opt).from(element).save().then(restoreView);
                 } else {
                     html2pdf().set(opt).from(element).outputImg().then(img => {
                         let a = document.createElement('a');
                         a.href = img.src;
                         a.download = opt.filename;
                         a.click();
-                        showLoading(false);
+                        restoreView();
                     });
                 }
-            }, 500);
+            }, 800); 
         }
     </script>
 </body>
