@@ -20,14 +20,13 @@
         body { 
             font-family: 'Kanit', sans-serif; 
             -webkit-tap-highlight-color: transparent;
-            /* ใส่ภาพพื้นหลัง GIF */
-            background-image: url('https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExdnQ4MzNoaGx4MHh6Y2diYmJtN2N2ejB6aHNmOGhzdHhxdmd3ODJscyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/s1iF2QudmlgXIWMQf4/giphy.gif');
+            /* เพิ่ม linear-gradient สีขาวโปร่งแสง ทับภาพพื้นหลังให้ดูสว่างและอ่านง่ายขึ้น */
+            background-image: linear-gradient(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.65)), url('https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExdnQ4MzNoaGx4MHh6Y2diYmJtN2N2ejB6aHNmOGhzdHhxdmd3ODJscyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/s1iF2QudmlgXIWMQf4/giphy.gif');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
         }
         
-        /* สไตล์กล่องข้อความแบบกระจกใส ทับบน GIF ให้ดูสวยงามและอ่านง่าย */
         .glass-panel { 
             background: rgba(255, 255, 255, 0.85); 
             backdrop-filter: blur(12px); 
@@ -35,10 +34,8 @@
             box-shadow: 0 8px 32px rgba(14, 165, 233, 0.15);
         }
         
-        /* เมนูด้านล่าง (Nav) */
         .nav-item.active { color: #0ea5e9; border-top: 3px solid #0ea5e9; }
         
-        /* สไตล์หน้าจอ PIN สีฟ้า */
         #pin-screen { 
             z-index: 9999; 
             background: rgba(224, 242, 254, 0.95);
@@ -54,7 +51,6 @@
         }
         .num-pad:active { background: #bae6fd; transform: scale(0.95); transition: 0.1s; }
         
-        /* 🔥 อนิเมชันเลเซอร์สำหรับ Input Text Box 🔥 */
         @keyframes laserBorder {
             0% { box-shadow: 0 0 5px #0ea5e9, inset 0 0 2px #0ea5e9; border-color: #0ea5e9; }
             50% { box-shadow: 0 0 15px #38bdf8, inset 0 0 8px #38bdf8; border-color: #7dd3fc; }
@@ -436,7 +432,7 @@
             chartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: labels, // วันที่จะแสดงเป็น วว/ดด/ปปปป สั้นๆ แล้ว
                     datasets: [
                         { label: 'รายรับ', data: incomeData, backgroundColor: '#4ade80', borderRadius: 6 },
                         { label: 'รายจ่าย', data: expenseData, backgroundColor: '#f87171', borderRadius: 6 }
@@ -544,7 +540,7 @@
                     alert('✨ แก้ไขข้อมูลสำเร็จ');
                     closeEditModal();
                     loadAllRecords();
-                    loadDashboard(); // อัปเดตยอดหน้าแรกด้วย
+                    loadDashboard();
                 }
             } catch (error) { alert('เกิดข้อผิดพลาดในการอัปเดต'); }
             showLoading(false);
