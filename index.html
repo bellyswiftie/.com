@@ -184,7 +184,7 @@
                     </div>
                     <div class="mb-5">
                         <label class="block text-xs font-bold text-sky-700 mb-2"><i class="fa-solid fa-camera mr-1 text-sky-400"></i>รูปภาพ (สลิป/สินค้า)</label>
-                        <input type="file" id="inc-image" accept="image/*" capture="environment" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-sky-100 file:text-sky-700 hover:file:bg-sky-200 cursor-pointer">
+                        <input type="file" id="inc-image" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-sky-100 file:text-sky-700 hover:file:bg-sky-200 cursor-pointer">
                     </div>
                     <button type="submit" class="w-full bg-gradient-to-r from-green-400 to-green-500 text-white p-3.5 rounded-2xl font-bold shadow-lg shadow-green-200 hover:opacity-90 transition"><i class="fa-solid fa-check-circle mr-2 text-lg"></i>บันทึกรายรับ</button>
                 </form>
@@ -209,7 +209,7 @@
                     </div>
                     <div class="mb-5">
                         <label class="block text-xs font-bold text-sky-700 mb-2"><i class="fa-solid fa-camera mr-1 text-sky-400"></i>รูปภาพ (ใบเสร็จ)</label>
-                        <input type="file" id="exp-image" accept="image/*" capture="environment" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-sky-100 file:text-sky-700 hover:file:bg-sky-200 cursor-pointer">
+                        <input type="file" id="exp-image" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-sky-100 file:text-sky-700 hover:file:bg-sky-200 cursor-pointer">
                     </div>
                     <button type="submit" class="w-full bg-gradient-to-r from-red-400 to-red-500 text-white p-3.5 rounded-2xl font-bold shadow-lg shadow-red-200 hover:opacity-90 transition"><i class="fa-solid fa-check-circle mr-2 text-lg"></i>บันทึกรายจ่าย</button>
                 </form>
@@ -292,7 +292,6 @@
         const pinScreen = document.getElementById('pin-screen');
         const pinTitle = document.getElementById('pin-title');
         
-        // ตัวแปรสำหรับเก็บข้อมูลต้นฉบับไว้ใช้ตอนฟิลเตอร์เวลา Export
         let originalDashboardData = null; 
 
         if(savedPin) { pinTitle.innerHTML = "<i class='fa-solid fa-lock mr-2'></i>ใส่รหัส PIN เพื่อเข้าใช้งาน"; }
@@ -383,7 +382,7 @@
 
                 const result = await response.json();
                 if(result.status === 'success') {
-                    alert('✨ บันทึกข้อมูลเรียบร้อยแล้ว!');
+                    alert('บันทึกข้อมูลเรียบร้อยแล้ว!');
                     document.getElementById(`form-${type}`).reset();
                     switchTab('overview');
                 } else {
@@ -407,7 +406,7 @@
                 const res = await response.json();
                 if(res.status === 'success') {
                     const data = res.data;
-                    originalDashboardData = data; // เก็บตัวแปรต้นฉบับไว้
+                    originalDashboardData = data; 
                     document.getElementById('txt-total-income').innerText = data.totalIncome.toLocaleString() + ' ฿';
                     document.getElementById('txt-total-expense').innerText = data.totalExpense.toLocaleString() + ' ฿';
                     renderChart(data.dailyChart);
@@ -419,7 +418,6 @@
         function renderChart(dailyData) {
             const ctx = document.getElementById('salesChart').getContext('2d');
             
-            // แก้ไข: ให้เรียงลำดับวันที่แบบปฏิทินจริงแทนการเรียงตามตัวอักษร
             const labels = Object.keys(dailyData).sort((a, b) => {
                 const partsA = a.split('/');
                 const partsB = b.split('/');
@@ -567,20 +565,15 @@
             showLoading(false);
         }
 
-        // ==========================================
-        // 7. ระบบส่งออกไฟล์เอกสาร (ปรับปรุงเรื่องการกรองวันที่)
-        // ==========================================
         function exportDoc(format) {
             const startVal = document.getElementById('export-start').value;
             const endVal = document.getElementById('export-end').value;
             
-            // กรองข้อมูลเฉพาะวันที่ ที่เลือก (ถ้ามีการเลือก)
             if(originalDashboardData && (startVal || endVal)) {
                 let filteredDaily = {};
                 let fInc = 0;
                 let fExp = 0;
                 
-                // กำหนดขอบเขตเวลา ถ้าไม่ได้กรอกช่องใดช่องหนึ่ง ให้เป็นอดีตหรืออนาคตไปเลย
                 const sDate = startVal ? new Date(startVal + 'T00:00:00') : new Date('2000-01-01T00:00:00');
                 const eDate = endVal ? new Date(endVal + 'T23:59:59') : new Date('2100-01-01T23:59:59');
 
@@ -596,7 +589,6 @@
                     }
                 }
                 
-                // อัปเดตตัวเลขหน้า Overview ชั่วคราวก่อนจับภาพ
                 document.getElementById('txt-total-income').innerText = fInc.toLocaleString() + ' ฿';
                 document.getElementById('txt-total-expense').innerText = fExp.toLocaleString() + ' ฿';
                 renderChart(filteredDaily);
@@ -617,7 +609,6 @@
             setTimeout(() => {
                 const restoreView = () => {
                     showLoading(false);
-                    // เมื่อจับภาพเสร็จ คืนค่า Dashboard เป็นแบบโชว์ทุกวันเหมือนเดิม
                     if(originalDashboardData && (startVal || endVal)) {
                         document.getElementById('txt-total-income').innerText = originalDashboardData.totalIncome.toLocaleString() + ' ฿';
                         document.getElementById('txt-total-expense').innerText = originalDashboardData.totalExpense.toLocaleString() + ' ฿';
